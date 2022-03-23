@@ -76,6 +76,9 @@ jar {
     archiveClassifier = ''
 }
 
+/**
+ * JAVA 11
+ */
 tasks.register('compileWith11', JavaCompile) {
     javaCompiler = javaToolchains.compilerFor {
         println 'Compiling for java 11'
@@ -83,16 +86,6 @@ tasks.register('compileWith11', JavaCompile) {
     }
 }
 
-tasks.register('compileWith8', JavaCompile) {
-    javaCompiler = javaToolchains.compilerFor {
-        println 'Compiling for java 8'
-        languageVersion = JavaLanguageVersion.of(8)
-    }
-}
-
-/**
- * JAVA 11
- */
 tasks.register('buildForJava11') {
     dependsOn 'clean'
     dependsOn 'compileWith11'
@@ -126,6 +119,13 @@ tasks.register('publishJava11Artifactory') {
 /**
  * JAVA 8
  */
+tasks.register('compileWith8', JavaCompile) {
+    javaCompiler = javaToolchains.compilerFor {
+        println 'Compiling for java 8'
+        languageVersion = JavaLanguageVersion.of(8)
+    }
+}
+
 tasks.register('buildForJava8') {
     dependsOn 'clean'
     dependsOn 'compileWith8'

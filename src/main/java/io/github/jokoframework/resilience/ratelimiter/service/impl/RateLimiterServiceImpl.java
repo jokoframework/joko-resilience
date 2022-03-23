@@ -11,7 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.WebUtils;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -25,6 +27,8 @@ public class RateLimiterServiceImpl implements RateLimiterService {
 
     public static final String X_RATE_LIMIT_REMAINING = "X-Rate-Limit-Remaining";
     public static final String RATE_LIMIT_RETRY_AFTER_SECONDS = "Rate-Limit-Retry-After-Seconds";
+    public static final String JSESSIONID = "JSESSIONID";
+    public static final String MISSING_HEADER = "Missing Header: ";
 
     // Cache for API key and token bucket
     Map<String, Bucket> bucketCache = new ConcurrentHashMap<>();
@@ -36,6 +40,9 @@ public class RateLimiterServiceImpl implements RateLimiterService {
 
     @Value("${joko.resilience.ratelimiter.auth.header-name:Authorization}")
     private String authHeader;
+
+    @Value("${joko.resilience.ratelimiter.auth.jsession.cookie.enabled:false}")
+    private boolean jSessionCookieEnabled;
 
     @Value("${joko.resilience.ratelimiter.error.message:You have exhausted your API Request Quota}")
     private String errorMessage;
@@ -57,15 +64,27 @@ public class RateLimiterServiceImpl implements RateLimiterService {
                 .build();
     }
 
+    private String getApiKey(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String apiKey;
+        if (jSessionCookieEnabled) {
+            Cookie jSessionCookie = WebUtils.getCookie(request, JSESSIONID);
+            apiKey = jSessionCookie != null ? jSessionCookie.getValue() : "";
+        } else {
+            apiKey = request.getHeader(authHeader);
+            if (apiKey == null || apiKey.isEmpty()) {
+                String exceptionMessage = MISSING_HEADER + authHeader;
+                response.sendError(HttpStatus.BAD_REQUEST.value(), exceptionMessage);
+                throw new IOException(exceptionMessage);
+            }
+        }
+        return apiKey;
+    }
+
     public boolean addRateLimit(HttpServletRequest request, HttpServletResponse response, Method method) throws IOException {
         Annotation annotation = method.getAnnotation(RateLimit.class);
         String methodName = method.getName();
-        String apiKey = request.getHeader(authHeader);
+        String apiKey = this.getApiKey(request, response);
         String bucketKey = apiKey + methodName;
-        if (apiKey == null || apiKey.isEmpty()) {
-            response.sendError(HttpStatus.BAD_REQUEST.value(), "Missing Header: " + authHeader);
-            return false;
-        }
         this.configureProps((RateLimit) annotation);
         Bucket bucket = this.resolveBucket(bucketKey);
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
