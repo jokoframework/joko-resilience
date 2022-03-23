@@ -5,17 +5,16 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-@ComponentScan("io.github.jokoframework.resilience.ratelimiter")
+@ComponentScan("io.github.jokoframework.resilience.ratelimiter.config")
 public class JokoHybridRateLimiterConfig implements WebMvcConfigurer {
-
 
     @Autowired
     private JokoInterceptorUtils jokoInterceptorUtils;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        jokoInterceptorUtils.addJokoInterceptor(registry);
-        jokoInterceptorUtils.addJokoGlobalInterceptor(registry);
+        jokoInterceptorUtils.addJokoRateLimitInterceptor(registry);
+        jokoInterceptorUtils.addJokoGlobalRateLimitInterceptor(registry);
     }
 
 }
