@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.WebUtils;
 
 import javax.servlet.http.Cookie;
@@ -84,7 +85,8 @@ public class RateLimiterServiceImpl implements RateLimiterService {
         Annotation annotation = method.getAnnotation(RateLimit.class);
         String methodName = method.getName();
         String apiKey = this.getApiKey(request, response);
-        String bucketKey = apiKey + methodName;
+        String endpointUrl = this.getEndpointUrl(method);
+        String bucketKey = apiKey + methodName + endpointUrl;
         this.configureProps((RateLimit) annotation);
         Bucket bucket = this.resolveBucket(bucketKey);
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
@@ -111,4 +113,19 @@ public class RateLimiterServiceImpl implements RateLimiterService {
         this.rateLimitMergedProps = annotation != null ? this.getMergedProps(annotation) : this.rateLimitGlobalProps;
     }
 
+    private String getEndpointUrl(Method method) {
+        if (method.isAnnotationPresent(GetMapping.class)) {
+            return method.getAnnotation(GetMapping.class).value()[0];
+        } else if (method.isAnnotationPresent(PutMapping.class)) {
+            return method.getAnnotation(PutMapping.class).value()[0];
+        } else if (method.isAnnotationPresent(PostMapping.class)) {
+            return method.getAnnotation(PostMapping.class).value()[0];
+        } else if (method.isAnnotationPresent(PatchMapping.class)) {
+            return method.getAnnotation(PatchMapping.class).value()[0];
+        } else if (method.isAnnotationPresent(DeleteMapping.class)) {
+            return method.getAnnotation(DeleteMapping.class).value()[0];
+        } else if (method.isAnnotationPresent(RequestMapping.class)) {
+            return method.getAnnotation(RequestMapping.class).value()[0];
+        } else return "";
+    }
 }
