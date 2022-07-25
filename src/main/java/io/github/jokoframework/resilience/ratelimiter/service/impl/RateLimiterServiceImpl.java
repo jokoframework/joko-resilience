@@ -85,7 +85,7 @@ public class RateLimiterServiceImpl implements RateLimiterService {
         Annotation annotation = method.getAnnotation(RateLimit.class);
         String methodName = method.getName();
         String apiKey = this.getApiKey(request, response);
-        String endpointUrl = this.getEndpointUrl(method);
+        String endpointUrl = this.getEndpointUrl(method, request);
         String bucketKey = apiKey + methodName + endpointUrl;
         this.configureProps((RateLimit) annotation);
         Bucket bucket = this.resolveBucket(bucketKey);
@@ -113,7 +113,7 @@ public class RateLimiterServiceImpl implements RateLimiterService {
         this.rateLimitMergedProps = annotation != null ? this.getMergedProps(annotation) : this.rateLimitGlobalProps;
     }
 
-    private String getEndpointUrl(Method method) {
+    private String getEndpointUrl(Method method, HttpServletRequest request) {
         if (method.isAnnotationPresent(GetMapping.class)) {
             return method.getAnnotation(GetMapping.class).value()[0];
         } else if (method.isAnnotationPresent(PutMapping.class)) {
@@ -126,6 +126,8 @@ public class RateLimiterServiceImpl implements RateLimiterService {
             return method.getAnnotation(DeleteMapping.class).value()[0];
         } else if (method.isAnnotationPresent(RequestMapping.class)) {
             return method.getAnnotation(RequestMapping.class).value()[0];
+        } else if(request.getContextPath() != null && !request.getContextPath().isEmpty()){
+            return request.getContextPath();
         } else return "";
     }
 }
