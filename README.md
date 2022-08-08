@@ -146,6 +146,13 @@ public ResponseEntity<ChangePasswordResponse> changePassword(@PathVariable("user
 }
 ```
 
+#### Leaving a specific request out of the Rate Limiter with an annotation
+To unlimit a specific request, we need to make use of the **@RateLimitExclude** annotation, which has no parameters
+
+This is useful when you have two requests associated to the same path (With different HTTP verbs), but you only want
+to limit one of them, if you do not add this annotation to the excluded one you will require to provide the Joko
+Resilience Header (Even though it wont be actually limited if it recieved the header)
+
 ## Building from source
 The library can be generated from source for java 8 and 11 using prebuild gradle
 tasks:

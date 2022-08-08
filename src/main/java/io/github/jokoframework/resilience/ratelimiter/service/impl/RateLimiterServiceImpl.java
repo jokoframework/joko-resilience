@@ -4,6 +4,7 @@ import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.Refill;
+import io.github.jokoframework.resilience.ratelimiter.annotation.RateLimitExclude;
 import io.github.jokoframework.resilience.ratelimiter.annotation.RateLimit;
 import io.github.jokoframework.resilience.ratelimiter.interceptor.RateLimitProps;
 import io.github.jokoframework.resilience.ratelimiter.service.RateLimiterService;
@@ -82,6 +83,12 @@ public class RateLimiterServiceImpl implements RateLimiterService {
     }
 
     public boolean addRateLimit(HttpServletRequest request, HttpServletResponse response, Method method) throws IOException {
+        // Any method annotated with RateLimitExclude will let the request continue without checking anything related
+        // to the Rate Limiting
+        if (method.isAnnotationPresent(RateLimitExclude.class)) {
+            return true;
+        }
+
         Annotation annotation = method.getAnnotation(RateLimit.class);
         String methodName = method.getName();
         String apiKey = this.getApiKey(request, response);
