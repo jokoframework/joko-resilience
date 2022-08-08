@@ -85,7 +85,7 @@ public class RateLimiterServiceImpl implements RateLimiterService {
     public boolean addRateLimit(HttpServletRequest request, HttpServletResponse response, Method method) throws IOException {
         // Any method annotated with RateLimitExclude will let the request continue without checking anything related
         // to the Rate Limiting
-        if (method.getAnnotation(RateLimitExclude.class) != null) {
+        if (method.isAnnotationPresent(RateLimitExclude.class)) {
             return true;
         }
 
